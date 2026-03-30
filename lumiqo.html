@@ -2069,8 +2069,8 @@ function cardHTML(c,f){
   let html='';
   html+='<div class="ctrl-card '+sc+'" id="card-'+cid+'">';
   html+='<div class="ctrl-head">';
-  html+='<span class="ctrl-id">'+c.id+'</span>';
-  html+='<span class="ctrl-title">'+c.t+(c.hds?'<span class="hds-tag">HDS</span>':'')+'</span>';
+  html+='<span class="ctrl-id">'+xe(c.id)+'</span>';
+  html+='<span class="ctrl-title">'+xe(c.t)+(c.hds?'<span class="hds-tag">HDS</span>':'')+'</span>';
   const _qs=(currentLang==='en'&&typeof QUESTIONS_EN!=='undefined'&&QUESTIONS_EN[c.id])?QUESTIONS_EN[c.id]:QUESTIONS[c.id];
   if(_qs){
     html+='<button class="qs-toggle" id="qsbtn-'+cid+'" onclick="toggleQuestions(&quot;'+c.id+'&quot;)">'+t('questions_btn')+'</button>';
@@ -2079,7 +2079,7 @@ function cardHTML(c,f){
     html+='<button class="tmpl-btn" onclick="openTemplates(&quot;'+c.id+'&quot;)" title="'+t('formulations_btn')+'">'+t('formulations_btn')+'</button>';
   }
   html+='</div>';
-  html+='<div class="ctrl-desc">'+c.desc+'</div>';
+  html+='<div class="ctrl-desc">'+xe(c.desc)+'</div>';
   html+='<div class="ctrl-actions">';
   html+='<div class="status-row">';
   html+='<button class="sbtn'+(f.status==='c'?' on-c':'')+'" onclick="setStatus(\''+c.id+'\',\'c\')">'+(t('status_c'))+'</button>';
@@ -2349,7 +2349,7 @@ function copyQuestion(text){
 }
 
 
-function esc(s){return (s||'').replace(/"/g,'&quot;').replace(/</g,'&lt;');}
+function esc(s){return (s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 
 function setStatus(id,status){
   if(!activeClient)return;
@@ -2419,9 +2419,9 @@ function updateEcarts(){
     const css=QUALIF_CSS[f.status]||'';
     const lbl=QUALIF_LABEL[f.status]||f.status;
     return `<div class="ecart-card">
-      <div class="ecart-tag ${css}">${lbl} — ${c.id}</div>
-      <div class="ecart-ctrl">${c.t}</div>
-      <div class="ecart-txt">${f.ecart_constat||'Constat non encore saisi'}</div>
+      <div class="ecart-tag ${css}">${xe(lbl)} — ${xe(c.id)}</div>
+      <div class="ecart-ctrl">${xe(c.t)}</div>
+      <div class="ecart-txt">${xe(f.ecart_constat||'Constat non encore saisi')}</div>
     </div>`;
   }).join('');
 }
@@ -4982,8 +4982,8 @@ function buildPrivacyPreview(m,findings){
     first3.forEach(ctrl=>{
       const f=findings[ctrl.id];
       const constat=(f.ecart_constat||'(vide)');
-      preview+='  ['+ctrl.id+'] <span class="sent">'+constat.substring(0,60)+(constat.length>60?'...':'')+'</span>\n';
-      if(f.preuve) preview+='  Preuves: <span class="sent">'+f.preuve.substring(0,50)+(f.preuve.length>50?'...':'')+'</span>\n';
+      preview+='  ['+xe(ctrl.id)+'] <span class="sent">'+xe(constat.substring(0,60))+(constat.length>60?'...':'')+'</span>\n';
+      if(f.preuve) preview+='  Preuves: <span class="sent">'+xe(f.preuve.substring(0,50))+(f.preuve.length>50?'...':'')+'</span>\n';
     });
   }
   el.innerHTML=preview;
@@ -5673,7 +5673,7 @@ function renderJournal(){
         +'<div class="je-head">'
         +'<span class="je-time">'+dateStr+'</span>'
         +'<span class="je-author">'+xe(e.author)+'</span>'
-        +'<span class="je-type">'+typeLbl+'</span>'
+        +'<span class="je-type">'+xe(typeLbl)+'</span>'
         +(e.clientName&&e.clientName!='—'?'<span class="je-val" style="margin-left:auto;font-size:10px">'+xe(e.clientName)+'</span>':'')
         +'</div>'
         +'<div class="je-body">'+body+'</div>'
@@ -5766,11 +5766,12 @@ function runGlobalSearch(){
       }
       if(!matchField) return;
 
-      // Build highlighted snippet
-      const idx=matchVal.toLowerCase().indexOf(q);
+      // Build highlighted snippet (escape first, then highlight)
+      const escapedVal=xe(matchVal);
+      const idx=escapedVal.toLowerCase().indexOf(q.toLowerCase());
       const start=Math.max(0,idx-30);
-      const end=Math.min(matchVal.length,idx+q.length+50);
-      let snippet=(start>0?'...':'')+matchVal.substring(start,end)+(end<matchVal.length?'...':'');
+      const end=Math.min(escapedVal.length,idx+q.length+50);
+      let snippet=(start>0?'...':'')+escapedVal.substring(start,end)+(end<escapedVal.length?'...':'');
       // Highlight
       const re=new RegExp('('+q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+')','gi');
       snippet=snippet.replace(re,'<mark>$1</mark>');
@@ -7141,8 +7142,7 @@ function applyLang() {
   // Update all data-i18n elements
   document.querySelectorAll('[data-i18n]').forEach(el=>{
     const key=el.getAttribute('data-i18n');
-    if(el.tagName==='OPTION') el.textContent=t(key);
-    else el.innerHTML=t(key);
+    el.textContent=t(key);
   });
   // Toolbar search placeholder
   // Update data-i18n-placeholder elements
@@ -7197,7 +7197,7 @@ function applyLang() {
 
   // Lock screen dynamic text
   const lhint=document.getElementById('lock-hint');
-  if(lhint) lhint.innerHTML=t('lock_hint_new');
+  if(lhint) lhint.textContent=t('lock_hint_new');
   const llbl=document.getElementById('lock-pwd-label');
   if(llbl) llbl.textContent=t('lock_pwd_label_new');
   const lbadge=document.getElementById('lock-mode-badge');
